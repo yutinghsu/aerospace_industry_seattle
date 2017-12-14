@@ -89,7 +89,7 @@ var force = d3.layout.force()
     .linkDistance(200)
     .size([width, height]);
 
-d3.json("graph.json", function(error, json) {
+d3.json("data/graph.json", function(error, json) {
 	if (error) { console.log(error); }
 	
 	force
