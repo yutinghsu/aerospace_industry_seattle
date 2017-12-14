@@ -8,7 +8,9 @@
 		  stroke: #252831;
 		  stroke-width: 0.5px;
 		}
-		
+		path.arrow {
+			fill: #252831;
+		}
 		text.subtitle {
 			text-anchor: end;
 		    fill: rgb(97, 97, 97);
@@ -62,8 +64,10 @@
 var width = 960, height = 600;
 var svg = d3.select("svg")
     .attr("width", width)
-    .attr("height", height);
+    .attr("height", height)
+    .attr("viewBox", "0 0 "+width+" "+height);
 
+// Ref: https://stackoverflow.com/questions/28050434/introducing-arrowdirected-in-force-directed-graph-d3
 // build the arrow.
 svg.append("svg:defs").selectAll("marker")
     .data(["end"]) // Different link/path types can be defined here
@@ -72,11 +76,12 @@ svg.append("svg:defs").selectAll("marker")
     .attr("viewBox", "0 -5 10 10")
     .attr("refX", 15)
     .attr("refY", -1.5)
-    .attr("markerWidth", 6)
-    .attr("markerHeight", 6)
+    .attr("markerWidth", 12)
+    .attr("markerHeight", 12)
     .attr("orient", "auto")
   .append("svg:path")
-    .attr("d", "M0,-5L10,0L0,5");
+    .attr("d", "M0,-5L10,0L0,5")
+    .attr("class", "arrow");
 
 
 var force = d3.layout.force()
@@ -96,8 +101,7 @@ d3.json("graph.json", function(error, json) {
 	var path = svg.append("svg:g").selectAll("path")
 		.data(force.links())
 		.enter().append("svg:path")
-		.attr("class", "link")
-		.attr("marker-end", "url(#arrow)");
+		.attr("class", "link");
 
 	// add the nodes
 	var node = svg.selectAll(".node")
@@ -105,9 +109,23 @@ d3.json("graph.json", function(error, json) {
 		.enter().append("g")
 		.attr("class", "node")
 		.call(force.drag);
+
 	node.append("circle")
 		.attr("class", function(d) { return "id-"+ d.id + " activity-"+ d.activity_group; })
-		.attr("r", 6);
+		.attr("r", 4)
+		.on("mouseover", function(d) { 
+			d3.select("text.id-"+d.id).attr("display", "inline");
+		})
+		.on("mouseout", function() { 
+			svg.selectAll("text.label").attr("display", "none"); 
+		});
+
+	node.append("text").text(function(d) {return d.label})
+		.attr("x", 0)
+		.attr("dy", "-2em")
+		.attr("text-anchor", "middle")
+		.attr("display", "none")
+		.attr("class", function(d) { return "label "+"id-" + d.id });
 
 	node.append("text")
 	    .attr("x", 10)
@@ -128,7 +146,7 @@ d3.json("graph.json", function(error, json) {
 		        d.target.y;
 		});
 
-		path.attr("marker-end", "url(#arrow)");
+		path.attr("marker-end", "url(#end)");
 		// Move nodes
 		node.attr("transform", function(d) { 
 			return "translate(" + d.x + "," + d.y + ")"; });
