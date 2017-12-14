@@ -2,9 +2,59 @@
 <head>
 	<title>The kinds of Companies That Comprise Seattle's Aerospace Industry</title>
 	<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+	<style type="text/css">
+		path.link {
+		  fill: none;
+		  stroke: #252831;
+		  stroke-width: 0.5px;
+		}
+		
+		text.subtitle {
+			text-anchor: end;
+		    fill: rgb(97, 97, 97);
+		    font-size: 1em;
+		    text-anchor: start;
+		}
+		.activity-1_1 {
+		    fill: #c3277c;
+		    stroke: #c3277c;
+		    background-color: #c3277c;
+		}
+		.activity-1_2 {
+			fill:#e22220;
+			stroke:#e22220;
+			background-color:#e22220
+		}
+		.activity-2_1 {
+		    fill: #f08d1f;
+		    stroke: #f08d1f;
+		    background-color: #f08d1f;
+		}
+		.activity-2_2 {
+		    fill: #fcc528;
+		    stroke: #fcc528;
+		    background-color: #fcc528;
+		}
+		.activity-3_1 {
+		    fill: #8bba25;
+		    stroke: #8bba25;
+		    background-color: #8bba25;
+		}
+		.activity-3_3 {
+		    fill: #1395ba;
+		    stroke: #1395ba;
+		    background-color: #1395ba;
+		}
+		.activity-4_1 {
+		    fill: #296faf;
+		    stroke: #296faf;
+		    background-color: #296faf;
+		}
+	</style>
 </head>
 <body>
 <h1>The kinds of Companies That Comprise Seattle's Aerospace Industry</h1>
+
 <svg></svg>
 
 <script type="text/javascript">
@@ -14,15 +64,95 @@ var svg = d3.select("svg")
     .attr("width", width)
     .attr("height", height);
 
+// build the arrow.
+svg.append("svg:defs").selectAll("marker")
+    .data(["end"]) // Different link/path types can be defined here
+  .enter().append("svg:marker") // This section adds in the arrows
+    .attr("id", String)
+    .attr("viewBox", "0 -5 10 10")
+    .attr("refX", 15)
+    .attr("refY", -1.5)
+    .attr("markerWidth", 6)
+    .attr("markerHeight", 6)
+    .attr("orient", "auto")
+  .append("svg:path")
+    .attr("d", "M0,-5L10,0L0,5");
+
+
 var force = d3.layout.force()
-    .gravity(0.05)
+    .gravity(0.02)
+    .linkDistance(200)
     .size([width, height]);
 
-d3.json("graph.json", function(error, data) {
+d3.json("graph.json", function(error, json) {
 	if (error) { console.log(error); }
 	
+	force
+      .nodes(json.nodes)
+      .links(json.links)
+      .start();
+
+	// add the edges
+	var path = svg.append("svg:g").selectAll("path")
+		.data(force.links())
+		.enter().append("svg:path")
+		.attr("class", "link")
+		.attr("marker-end", "url(#arrow)");
+
+	// add the nodes
+	var node = svg.selectAll(".node")
+		.data(force.nodes())
+		.enter().append("g")
+		.attr("class", "node")
+		.call(force.drag);
+	node.append("circle")
+		.attr("class", function(d) { return "id-"+ d.id + " activity-"+ d.activity_group; })
+		.attr("r", 6);
+
+	node.append("text")
+	    .attr("x", 10)
+	    .attr("dy", ".35em")
+	    .text(function(d) { return d.id; });
+	
+	force.on("tick", function() {
+		// Calculate node distances
+		path.attr("d", function(d) {
+		    var dx = d.target.x - d.source.x,
+		        dy = d.target.y - d.source.y,
+		        dr = Math.sqrt(dx * dx + dy * dy);
+		    return "M" + 
+		        d.source.x + "," + 
+		        d.source.y + "A" + 
+		        dr + "," + dr + " 0 0,1 " + 
+		        d.target.x + "," + 
+		        d.target.y;
+		});
+
+		path.attr("marker-end", "url(#arrow)");
+		// Move nodes
+		node.attr("transform", function(d) { 
+			return "translate(" + d.x + "," + d.y + ")"; });
+	});
+
 });
 
+// Subtitle 
+var subtitle = svg.append("g").attr("transform", "translate(" + 870 + ", " + 400 + ")");
+subtitle.append("text").text("Activity").attr("x", 2.5).attr("y", 0).attr("class", "subtitle").attr("font-weight", "bold").attr("font-size", "1.5em");
+subtitle.append("rect").attr("x", 3.5).attr("y", 2.5).attr("width", 13).attr("height", 13).attr("class", "activity-1_1");
+subtitle.append("text").text("Source").attr("x", 20).attr("y", 15).attr("class", "subtitle");
+subtitle.append("rect").attr("x", 3.5).attr("y", 17.5).attr("width", 13).attr("height", 13).attr("class", "activity-1_2");
+subtitle.append("text").text("Transport").attr("x", 20).attr("y", 30).attr("class", "subtitle");
+subtitle.append("rect").attr("x", 3.5).attr("y", 32.5).attr("width", 13).attr("height", 13).attr("class", "activity-2_1");
+subtitle.append("text").text("Design").attr("x", 20).attr("y", 45).attr("class", "subtitle");
+subtitle.append("rect").attr("x", 3.5).attr("y", 47.5).attr("width", 13).attr("height", 13).attr("class", "activity-2_2");
+subtitle.append("text").text("Make").attr("x", 20).attr("y", 60).attr("class", "subtitle");
+subtitle.append("rect").attr("x", 3.5).attr("y", 62.5).attr("width", 13).attr("height", 13).attr("class", "activity-3_1");
+subtitle.append("text").text("Sell").attr("x", 20).attr("y", 75).attr("class", "subtitle");
+subtitle.append("rect").attr("x", 3.5).attr("y", 77.5).attr("width", 13).attr("height", 13).attr("class", "activity-3_3");
+subtitle.append("text").text("Finance").attr("x", 20).attr("y", 90).attr("class", "subtitle");
+subtitle.append("rect").attr("x", 3.5).attr("y", 92.5).attr("width", 13).attr("height", 13).attr("class", "activity-4_1");
+subtitle.append("text").text("Strategize").attr("x", 20).attr("y", 105).attr("class", "subtitle");
 </script>
 </body>
 </html>
